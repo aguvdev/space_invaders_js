@@ -1,7 +1,12 @@
+body {
+  background-color: rgb(66, 66, 66);
+}
+
 #canvas1 {
   border: 5px solid black;
   position: absolute;
   top: 50%;
   left: 50%;
   translate: -50% -50%;
+  background: url('./src/img/background.png');
 }
