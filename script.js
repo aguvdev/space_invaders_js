@@ -5,12 +5,16 @@ class Player {
     this.height = 100;
     this.x = this.game.width * 0.5 - this.width * 0.5;
     this.y = this.game.height - this.height;
+    this.speed = 5;
   }
   draw(context){
     context.fillRect(this.x, this.y, this.width, this.height);
   }
   update(){
-    this.x += this.speed;
+    if (this.game.keys.indexOf('a') > -1) this.x -= this.speed;
+    if (this.game.keys.indexOf('d') > -1) this.x += this.speed;
+    if (this.game.keys.indexOf('w') > -1) this.y -= this.speed;
+    if (this.game.keys.indexOf('s') > -1) this.y += this.speed;
   }
 }
 
@@ -22,21 +26,28 @@ class Enemy {
 
 }
 
-// Define una clase llamada Game
 class Game {
-  // El constructor toma un argumento llamado canvas
   constructor(canvas) {
-    // Establece la propiedad canvas en el objeto canvas pasado como argumento
     this.canvas = canvas;
-    // Establece la propiedad width en el ancho del objeto canvas
     this.width = this.canvas.width;
-    // Establece la propiedad height en la altura del objeto canvas
     this.height = this.canvas.height;
+    this.keys = [];
     this.player = new Player(this);
+
+    // Event listeners
+    window.addEventListener('keydown', e => {
+      /* indexOf() devuelve el primer índice en el que se puede encontrar un elemento dado en la array.
+      Retorna -1 si el elemento no esta presente */
+      if (this.keys.indexOf(e.key) === -1) this.keys.push(e.key);
+    });
+    window.addEventListener('keyup', e => {
+      const index = this.keys.indexOf(e.key);
+      if (index > -1) this.keys.splice(index, 1); // splice() se puede usar para reemplazar o remover elementos existentes del array
+    })
   }
-  // Define un método llamado render
   render(context) {
     this.player.draw(context);
+    this.player.update();
   }
 }
 
@@ -44,14 +55,16 @@ class Game {
 window.addEventListener("load", function () {
   // Obtiene el elemento canvas1
   const canvas = document.getElementById("canvas1");
-  // Obtiene el contexto de dibujo del canvas
   const ctx = canvas.getContext("2d");
-  // Establece la propiedad width del canvas en 600
   canvas.width = 600;
-  // Establece la propiedad height del canvas en 800
   canvas.height = 800;
 
   const game = new Game(canvas);
-  console.log(game);
-  game.render(ctx);
+
+  function animate(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    game.render(ctx);
+    requestAnimationFrame(animate);
+  }
+  animate();
 });
