@@ -174,6 +174,16 @@ class Game {
       if (this.projectilesPool[i].free) return this.projectilesPool[i];
     }
   }
+  // collision detection entre dos rectángulos (axis-aligned)
+  checkCollision(a, b){
+    return (
+      a.x < b.x + b.width && // revisa si el extremo superior izquierdo es menor que el extremo superior derecho(extremo izq + ancho) del otro rectágulo
+      a.x + a.width > b.x && // revisa si el extremo superior derecho(extremo izq + ancho) es mayor que el extremo izquierdo del otro rectángulo
+      a.y < b.y + b.width && // revisa si el extremo superior izquierdo es menor(esta mas cerca de la parte superior del viewport) que el extremo inferior izq del otro rectángulo
+      a.y + a.height > b.y // revisa si el extremo izq inferior es mayor (mas alejado de la parte superior del viewport) que el extremo superior izq del otro rectángulo
+    )
+  }
+  // RECORDATORIO: para que este checkCollision funcione, los rectángulos que se le pasen tienen que tener las propiedades x, y, width, height.
 }
 
 // Agrega un evento 'load' que se activa cuando se carga completamente la página
