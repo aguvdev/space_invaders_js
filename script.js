@@ -73,6 +73,7 @@ class Enemy {
     this.y = 0;
     this.positionX = positionX;
     this.positionY = positionY;
+    this.markedForDeletion = false;
   }
   draw(context){
     context.strokeRect(this.x, this.y, this.width, this.height);
@@ -80,6 +81,13 @@ class Enemy {
   update(x, y){
     this.x = x + this.positionX;
     this.y = y + this.positionY;
+    // check collision enemies - projectiles
+    this.game.projectilesPool.forEach(projectile => {
+      if (!projectile.free && this.game.checkCollision(this, projectile)){
+        this.markedForDeletion = true;
+        projectile.reset();
+      }
+    });
   }
 }
 
@@ -108,6 +116,8 @@ class Wave {
       enemy.update(this.x, this.y);
       enemy.draw(context);
     })
+    // array.filter() creará una copia de un array dado y esa copia filtrada contendrá solo los elementos que pasaron una determinada condición
+    this.enemies = this.enemies.filter(object => !object.markedForDeletion); // aca creamos un array nuevo solo con los objetos que tengan la propiedad markedForDeletion en false, asi borrando los que lo tengan en true
   }
   create(){
     for (let y = 0; y < this.game.rows; y++){
@@ -132,8 +142,8 @@ class Game {
     this.numberOfProjectiles = 10;
     this.createProjectiles();
     
-    this.columns = 3;
-    this.rows = 3;
+    this.columns = 5;
+    this.rows = 5;
     this.enemySize = 60;
 
     this.waves = [];
