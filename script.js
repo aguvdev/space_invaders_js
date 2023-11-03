@@ -1,20 +1,57 @@
 class Player {
   constructor(game){
     this.game = game;
-    this.width = 100;
-    this.height = 100;
+    this.width = 140;
+    this.height = 120;
     this.x = this.game.width * 0.5 - this.width * 0.5;
     this.y = this.game.height - this.height;
-    this.speed = 10;
+    this.speed = 5;
     this.lives = 3;
+    this.maxLives = 10;
+    this.image = document.getElementById('player');
+    this.jets_image = document.getElementById('player_jets');
+    this.frameX = 0;
+    this.jetFrame = 1;
   }
   draw(context){
-    context.fillRect(this.x, this.y, this.width, this.height);
+    // handle sprite frames
+    if (this.game.keys.indexOf('1') > -1){
+      this.frameX = 1;
+    } else {
+      this.frameX = 0;
+    }
+    context.drawImage(this.jets_image,
+                      this.jetFrame * this.width, 
+                      0, 
+                      this.width, 
+                      this.height, 
+                      this.x, 
+                      this.y, 
+                      this.width, 
+                      this.height
+                      );
+    context.drawImage(this.image,
+                      this.frameX * this.width, 
+                      0, 
+                      this.width, 
+                      this.height, 
+                      this.x, 
+                      this.y, 
+                      this.width, 
+                      this.height
+                      );
   }
   update(){
     // movimiento horizontal
-    if (this.game.keys.indexOf('a') > -1) this.x -= this.speed;
-    if (this.game.keys.indexOf('d') > -1) this.x += this.speed;
+    if (this.game.keys.indexOf('a') > -1){
+      this.x -= this.speed;
+      this.jetFrame = 0;
+    } else if (this.game.keys.indexOf('d') > -1){
+      this.x += this.speed;
+      this.jetFrame = 2;
+    } else {
+      this.jetFrame = 1;
+    };
     // limites horizontales
     if (this.x < 0 - this.width * 0.5) this.x = 0 - this.width * 0.5; // aca le decimos que si x(posicion hacia la izquierda) es menor a 0, la posicion siempre va a ser 0
     else if (this.x > this.game.width - this.width * 0.5) this.x = this.game.width - this.width * 0.5; // y aca si x(posicion hacia la derecha) es el ancho menos el ancho del personaje, o sea el final de la pantalla, siempre va a ser ese valor para que no lo traspase
@@ -42,7 +79,7 @@ Los CREATIONAL DESIGN PATTERNS proporcionan varios mecanismos de creación de ob
 class Projectile {
   constructor(player){
     this.player = player;
-    this.width = 8;
+    this.width = 3;
     this.height = 40;
     this.x = 0;
     this.y = 0;
@@ -51,7 +88,10 @@ class Projectile {
   }
   draw(context){
     if (!this.free){
+      context.save();
+      context.fillStyle = 'gold';
       context.fillRect(this.x, this.y, this.width, this.height);
+      context.restore()
     }
   }
   update(){
@@ -112,16 +152,13 @@ class Enemy {
       }
     }
     // check collision enemies - player
-    if (this.game.checkCollision(this, this.game.player)){
-      this.markedForDeletion = true;
-      if (!this.game.gameOver && this.game.score > 0) this.game.score--;
+    if (this.game.checkCollision(this, this.game.player) && this.lives > 0){
+      this.lives = 0;
       this.game.player.lives--;
-      if (this.game.player.lives < 1) this.game.gameOver = true;
     }
     // lose condition
-    if (this.y + this.height > this.game.height){
+    if (this.y + this.height > this.game.height || this.game.player.lives < 1){
       this.game.gameOver = true;
-      this.markedForDeletion = true;
     }
   }
   hit(damage){
@@ -191,7 +228,7 @@ class Game {
     this.player = new Player(this);
 
     this.projectilesPool = [];
-    this.numberOfProjectiles = 10;
+    this.numberOfProjectiles = 15;
     this.createProjectiles();
     this.fired = false;
     
@@ -205,7 +242,7 @@ class Game {
 
     this.spriteUpdate = false;
     this.spriteTimer = 0;
-    this.spriteInternal = 120;
+    this.spriteInternal = 150;
 
     this.score = 0;
     this.gameOver = false;
@@ -236,19 +273,19 @@ class Game {
     }
 
     this.drawStatusText(context);
-    this.player.draw(context);
-    this.player.update();
     this.projectilesPool.forEach(projectile => {
       projectile.update();
       projectile.draw(context);
     });
+    this.player.draw(context);
+    this.player.update();
     this.waves.forEach(wave => {
       wave.render(context);
       if (wave.enemies.length < 1 && !wave.nextWaveTrigger && !this.gameOver){
         this.newWave();
         this.waveCount++;
         wave.nextWaveTrigger = true;
-        this.player.lives++;
+        if (this.player.lives < this.player.maxLives) this.player.lives++;
       }
     })
   }
@@ -281,8 +318,11 @@ class Game {
     context.shadowColor = 'black';
     context.fillText('Score: ' + this.score, 20, 40); // primero se le pasa el text, segundo cuando se despega horizontalmente de la pantalla, y cuanto se despega verticalmente
     context.fillText('Wave: ' + this.waveCount, 20, 80);
+    for (let i = 0; i < this.player.maxLives; i++){
+      context.strokeRect(20 + 20 * i, 100, 10, 15);
+    }
     for (let i = 0; i < this.player.lives; i++){
-      context.fillRect(20 +10 * i, 100, 5, 20);
+      context.fillRect(20 + 20 * i, 100, 10, 15);
     }
     if (this.gameOver){
       context.textAlign = 'center';
@@ -322,7 +362,6 @@ window.addEventListener("load", function () {
   canvas.height = 800;
   ctx.fillStyle = 'white';
   ctx.strokeStyle = 'white';
-  ctx.lineWidth = 5;
   ctx.font = '30px Impact';
 
   const game = new Game(canvas);
