@@ -10,3 +10,7 @@ body {
   translate: -50% -50%;
   background: url('./src/img/background.png');
 }
+
+#beetlemorph {
+  display: none;
+}

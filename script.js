@@ -82,19 +82,35 @@ class Enemy {
     this.markedForDeletion = false;
   }
   draw(context){
-    context.strokeRect(this.x, this.y, this.width, this.height);
+    //context.strokeRect(this.x, this.y, this.width, this.height);
+    context.drawImage(this.image, 
+                      this.frameX * this.width, 
+                      this.frameY * this.height, 
+                      this.width, 
+                      this.height, 
+                      this.x, 
+                      this.y, 
+                      this.width, 
+                      this.height
+                      );
   }
   update(x, y){
     this.x = x + this.positionX;
     this.y = y + this.positionY;
     // check collision enemies - projectiles
     this.game.projectilesPool.forEach(projectile => {
-      if (!projectile.free && this.game.checkCollision(this, projectile)){
-        this.markedForDeletion = true;
+      if (!projectile.free && this.game.checkCollision(this, projectile) && this.lives > 0){
+        this.hit(1);
         projectile.reset();
-        if (!this.game.gameOver) this.game.score++;
       }
     });
+    if (this.lives < 1){
+      if (this.game.spriteUpdate) this.frameX++;
+      if (this.frameX > this.maxFrame){
+        this.markedForDeletion = true;
+        if (!this.game.gameOver) this.game.score += this.maxLives;
+      }
+    }
     // check collision enemies - player
     if (this.game.checkCollision(this, this.game.player)){
       this.markedForDeletion = true;
@@ -108,6 +124,22 @@ class Enemy {
       this.markedForDeletion = true;
     }
   }
+  hit(damage){
+    this.lives -= damage;
+  }
+}
+
+// subclase de enemy o child class de enemy
+class Beetlemorph extends Enemy {
+  constructor(game, positionX, positionY){
+    super(game, positionX, positionY);
+    this.image = document.getElementById('beetlemorph');
+    this.frameX = 0;
+    this.maxFrame = 2;
+    this.frameY = Math.floor(Math.random() * 4);
+    this.lives = 1;
+    this.maxLives = this.lives;
+  }
 }
 
 class Wave {
@@ -115,9 +147,9 @@ class Wave {
     this.game = game;
     this.width = this.game.columns * this.game.enemySize;
     this.height = this.game.rows * this.game.enemySize;
-    this.x = 0;
+    this.x = this.game.width * 0.5 - this.width * 0.5;
     this.y = 0 - this.height;
-    this.speedX = 3;
+    this.speedX = Math.random() < 0.5 ? -1 : 1;
     this.speedY = 0;
     this.enemies = [];
     this.nextWaveTrigger = false;
@@ -144,7 +176,7 @@ class Wave {
       for (let x = 0; x < this.game.columns; x++){
         let enemyX = x * this.game.enemySize;
         let enemyY = y * this.game.enemySize;
-        this.enemies.push(new Enemy(this.game, enemyX, enemyY));
+        this.enemies.push(new Beetlemorph(this.game, enemyX, enemyY));
       }
     }
   }
@@ -165,11 +197,15 @@ class Game {
     
     this.columns = 2;
     this.rows = 2;
-    this.enemySize = 60;
+    this.enemySize = 80;
 
     this.waves = [];
     this.waves.push(new Wave(this));
     this.waveCount = 1;
+
+    this.spriteUpdate = false;
+    this.spriteTimer = 0;
+    this.spriteInternal = 120;
 
     this.score = 0;
     this.gameOver = false;
@@ -189,7 +225,16 @@ class Game {
       if (index > -1) this.keys.splice(index, 1); // splice() se puede usar para reemplazar o remover elementos existentes del array
     })
   }
-  render(context) {
+  render(context, deltaTime) {
+    // sprite timing
+    if (this.spriteTimer > this.spriteInternal){
+      this.spriteUpdate = true;
+      this.spriteTimer = 0;
+    } else {
+      this.spriteUpdate = false;
+      this.spriteTimer += deltaTime;
+    }
+
     this.drawStatusText(context);
     this.player.draw(context);
     this.player.update();
@@ -282,10 +327,13 @@ window.addEventListener("load", function () {
 
   const game = new Game(canvas);
 
-  function animate(){
+  let lastTime = 0;
+  function animate(timeStamp){
+    const deltaTime = timeStamp - lastTime;
+    lastTime = timeStamp;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    game.render(ctx);
+    game.render(ctx, deltaTime);
     requestAnimationFrame(animate);
   }
-  animate();
+  animate(0);
 });
