@@ -11,6 +11,6 @@ body {
   background: url('./src/img/background.png');
 }
 
-#beetlemorph, #player, #player_jets {
+#beetlemorph, #rhinomorph, #player, #player_jets {
   display: none;
 }
